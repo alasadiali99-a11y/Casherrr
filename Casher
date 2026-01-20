@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>كاشير مطعم الصبيراوي</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    margin: 0;
+    font-family: Tahoma, Arial;
+    background: #87CEEB;
+    text-align: center;
+}
+
+.screen { display: none; padding: 20px; }
+.active { display: block; }
+
+h1 { font-size: 40px; }
+
+button {
+    width: 90%;
+    max-width: 400px;
+    font-size: 26px;
+    padding: 18px;
+    margin: 10px auto;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+}
+
+.main-btn { background: #1e90ff; color: white; }
+.back-btn { background: #555; color: white; }
+.next-btn { background: #28a745; color: white; }
+.print-btn { background: #ff9800; color: white; }
+.delete-btn { background: red; color: white; }
+
+.items {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.item {
+    background: white;
+    padding: 15px;
+    font-size: 18px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.item.selected {
+    background: #1e90ff;
+    color: white;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    margin: 15px 0;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    font-size: 18px;
+}
+
+input, textarea {
+    width: 95%;
+    padding: 12px;
+    font-size: 20px;
+    margin: 10px 0;
+    border-radius: 10px;
+    border: none;
+}
+</style>
+</head>
+
+<body>
+
+<!-- الشاشة الأولى -->
+<div id="screen1" class="screen active">
+    <h1>مطعم الصبيراوي</h1>
+    <button class="main-btn" onclick="goTo('screen2')">عرض الطلبات</button>
+    <button class="main-btn" onclick="openRecords()">سجل الطلبات</button>
+</div>
+
+<!-- الشاشة الثانية -->
+<div id="screen2" class="screen">
+    <h1>عرض الطلبات</h1>
+    <div class="items" id="items"></div>
+    <button class="next-btn" onclick="goToSummary()">التالي</button>
+    <button class="back-btn" onclick="goTo('screen1')">رجوع</button>
+</div>
+
+<!-- الشاشة الثالثة -->
+<div id="screen3" class="screen">
+    <h1>تفاصيل الطلب</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>رقم</th>
+                <th>الطلب</th>
+                <th>العدد</th>
+                <th>السعر</th>
+            </tr>
+        </thead>
+        <tbody id="orderTable"></tbody>
+    </table>
+
+    <h2 id="total">المجموع: 0 د.ع</h2>
+
+    <textarea id="address" placeholder="العنوان"></textarea>
+    <input id="phone" placeholder="رقم الزبون">
+
+    <button class="print-btn" onclick="printOrder()">طباعة</button>
+    <button class="back-btn" onclick="goTo('screen2')">رجوع</button>
+</div>
+
+<!-- سجل الطلبات -->
+<div id="screen4" class="screen">
+    <h1>سجل الطلبات</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>العنوان</th>
+                <th>تفاصيل الطلب</th>
+                <th>المجموع</th>
+            </tr>
+        </thead>
+        <tbody id="recordsTable"></tbody>
+    </table>
+
+    <h2 id="totalSum">المجموع الكلي: 0 د.ع</h2>
+
+    <button class="delete-btn" onclick="clearRecords()">مسح الطلبات</button>
+    <button class="back-btn" onclick="goTo('screen1')">رجوع</button>
+</div>
+
+<script>
+const menu = {
+"بيتزا كبير":8000,
+"بيتزا وسط":6000,
+"بيتزا ام 5":5000,
+"بيتزا صغير":3000,
+"بركر دبل":2000,
+"بركر عادي":1000,
+"صاج دجاج":2000,
+"صاج لحم":2000,
+"صاج فلافل":1000,
+"وجبه صاج دجاج":3000,
+"وجبه صاج فلافل":1500,
+"زنكر":2000,
+"ريزو":3000,
+"كنتاكي وجبه":7000,
+"كنتاكي نص وجبه":3500,
+"فنكر دبل":1000,
+"فنكر عادي":500,
+"مشروبات غازيه":500
+};
+
+let selected = [];
+
+function goTo(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+const itemsDiv = document.getElementById("items");
+Object.keys(menu).forEach(item => {
+    let div = document.createElement("div");
+    div.className = "item";
+    div.innerText = item;
+    div.onclick = () => {
+        div.classList.toggle("selected");
+        if (selected.includes(item)) {
+            selected = selected.filter(i => i !== item);
+        } else {
+            selected.push(item);
+        }
+    };
+    itemsDiv.appendChild(div);
+});
+
+function goToSummary() {
+    let table = document.getElementById("orderTable");
+    table.innerHTML = "";
+    let total = 0;
+
+    selected.forEach((item, i) => {
+        total += menu[item];
+        table.innerHTML += `
+        <tr>
+            <td>${i+1}</td>
+            <td>${item}</td>
+            <td>1</td>
+            <td>${menu[item]} د.ع</td>
+        </tr>`;
+    });
+
+    document.getElementById("total").innerText = "المجموع: " + total + " د.ع";
+    goTo('screen3');
+}
+
+function printOrder() {
+    let address = document.getElementById("address").value;
+    let details = selected.join(" ، ");
+    let total = selected.reduce((s,i)=>s+menu[i],0);
+
+    let records = JSON.parse(localStorage.getItem("records") || "[]");
+    records.push({address, details, total});
+    localStorage.setItem("records", JSON.stringify(records));
+
+    window.print();
+}
+
+function openRecords() {
+    let code = prompt("ادخل رمز الدخول");
+    if (code === "4567") {
+        loadRecords();
+        goTo('screen4');
+    } else {
+        alert("رمز خاطئ");
+    }
+}
+
+function loadRecords() {
+    let records = JSON.parse(localStorage.getItem("records") || "[]");
+    let table = document.getElementById("recordsTable");
+    let sum = 0;
+    table.innerHTML = "";
+
+    records.forEach(r => {
+        sum += r.total;
+        table.innerHTML += `
+        <tr>
+            <td>${r.address}</td>
+            <td>${r.details}</td>
+            <td>${r.total} د.ع</td>
+        </tr>`;
+    });
+
+    document.getElementById("totalSum").innerText = "المجموع الكلي: " + sum + " د.ع";
+}
+
+function clearRecords() {
+    if (confirm("هل تريد مسح جميع الطلبات؟")) {
+        localStorage.removeItem("records");
+        loadRecords();
+    }
+}
+</script>
+
+</body>
+</html>
